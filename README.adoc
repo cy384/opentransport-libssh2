@@ -1,0 +1,45 @@
+= open transport libssh2 port
+
+This is a project to port libssh2 to the Retro68 toolchain for m68k and PPC Macs running an Open Transport networking stack.
+
+My goal is to write a new SSH client for system 7/8/9.
+
+TODO:
+
+* [*] basic build stuff
+* [ ] get all required mbedtls functionality working (filesystem stuff for key loading etc.?)
+* [ ] replace/implement socket ops
+* [ ] fix everything else
+
+== notes
+first build and install my opentransport-mbedtls library port.
+
+cmake .. -DCMAKE_TOOLCHAIN_FILE=/your/path/to/Retro68-build/toolchain/powerpc-apple-macos/cmake/retroppc.toolchain.cmake -DBUILD_SHARED_LIBS=OFF -DCRYPTO_BACKEND=mbedTLS -DENABLE_ZLIB_COMPRESSION=OFF -DENABLE_DEBUG_LOGGING=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF
+
+and then just make, builds the static lib.
+
+libssh2_session_callback_set to set a custom recv and send callback???
+
+default fn ar:
+
+ssize_t _libssh2_recv(libssh2_socket_t sock, void *buffer, size_t length,
+              int flags, void **abstract)
+
+ssize_t _libssh2_send(libssh2_socket_t sock, const void *buffer, size_t length,
+              int flags, void **abstract)
+
+see also LIBSSH2_RECV_FUNC and LIBSSH2_SEND_FUNC
+
+
+called as:
+
+(session->recv)(fd, buffer, length, flags, &session->abstract)
+
+in the LIBSSH2_RECV and LIBSSH2_RECV_FD macros in libssh2_priv.h
+
+make it only run in blocking mode? HAVE_DISABLED_NONBLOCKING ???
+
+
+also need to do:
+
+_libssh2_wait_socket in session.c
