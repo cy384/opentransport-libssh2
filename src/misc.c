@@ -133,29 +133,12 @@ ssize_t
 _libssh2_recv(libssh2_socket_t sock, void *buffer, size_t length,
               int flags, void **abstract)
 {
-    ssize_t rc;
+    int ret = -1;
+    OTFlags unused_flags;
 
-    (void) abstract;
+    ret = OTRcv(sock, buffer, length, &unused_flags);
 
-    rc = recv(sock, buffer, length, flags);
-#ifdef WIN32
-    if(rc < 0)
-        return -wsa2errno();
-#else
-    if(rc < 0) {
-        /* Sometimes the first recv() function call sets errno to ENOENT on
-           Solaris and HP-UX */
-        if(errno == ENOENT)
-            return -EAGAIN;
-#ifdef EWOULDBLOCK /* For VMS and other special unixes */
-        else if(errno == EWOULDBLOCK)
-          return -EAGAIN;
-#endif
-        else
-            return -errno;
-    }
-#endif
-    return rc;
+    return (ssize_t) ret;
 }
 
 /* _libssh2_send
@@ -166,24 +149,11 @@ ssize_t
 _libssh2_send(libssh2_socket_t sock, const void *buffer, size_t length,
               int flags, void **abstract)
 {
-    ssize_t rc;
+    int ret = -1;
 
-    (void) abstract;
+    ret = OTSnd(sock, (void*) buffer, length, 0);
 
-    rc = send(sock, buffer, length, flags);
-#ifdef WIN32
-    if(rc < 0)
-        return -wsa2errno();
-#else
-    if(rc < 0) {
-#ifdef EWOULDBLOCK /* For VMS and other special unixes */
-      if(errno == EWOULDBLOCK)
-        return -EAGAIN;
-#endif
-      return -errno;
-    }
-#endif
-    return rc;
+    return (ssize_t) ret;
 }
 
 /* libssh2_ntohu32

@@ -109,14 +109,16 @@
 #define inline __inline
 #endif
 
+// TODO FIXME proper ifdef here
 /* Provide iovec / writev on WIN32 platform. */
-#ifdef WIN32
+//#ifdef WIN32
 
 struct iovec {
     size_t iov_len;
     void *iov_base;
 };
 
+/*
 static inline int writev(int sock, struct iovec *iov, int nvecs)
 {
     DWORD ret;
@@ -125,8 +127,9 @@ static inline int writev(int sock, struct iovec *iov, int nvecs)
     }
     return -1;
 }
+*/
 
-#endif /* WIN32 */
+//#endif /* WIN32 */
 
 #ifdef __OS400__
 /* Force parameter type. */
