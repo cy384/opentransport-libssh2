@@ -343,8 +343,10 @@ session_nonblock(libssh2_socket_t sockfd,   /* operate on this */
  * gets the given blocking or non-blocking state of the socket.
  */
 static int
-get_socket_nonblocking(int sockfd)
+get_socket_nonblocking()
 {                               /* operate on this */
+return 1;
+#if 0
 #undef GETBLOCK
 #define GETBLOCK 0
 #ifdef HAVE_O_NONBLOCK
@@ -413,6 +415,7 @@ get_socket_nonblocking(int sockfd)
 
 #if(GETBLOCK == 0)
 #error "no non-blocking method was found/used/get"
+#endif
 #endif
 }
 
@@ -575,6 +578,9 @@ libssh2_session_callback_set(LIBSSH2_SESSION * session,
  */
 int _libssh2_wait_socket(LIBSSH2_SESSION *session, time_t start_time)
 {
+    // TODO FIXME
+    return 0;
+
     int rc;
     int seconds_to_next;
     int dir;
@@ -605,7 +611,7 @@ int _libssh2_wait_socket(LIBSSH2_SESSION *session, time_t start_time)
            during this condition */
         ms_to_next = 1000;
     }
-
+/*
     if(session->api_timeout > 0 &&
         (seconds_to_next == 0 ||
          ms_to_next > session->api_timeout)) {
@@ -666,7 +672,7 @@ int _libssh2_wait_socket(LIBSSH2_SESSION *session, time_t start_time)
         rc = select(session->socket_fd + 1, readfd, writefd, NULL,
                     has_timeout ? &tv : NULL);
     }
-#endif
+#endif*/
     if(rc == 0) {
         return _libssh2_error(session, LIBSSH2_ERROR_TIMEOUT,
                               "Timed out waiting on socket");
