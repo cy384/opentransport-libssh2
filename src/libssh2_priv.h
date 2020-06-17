@@ -960,6 +960,23 @@ struct _LIBSSH2_COMP_METHOD
     int (*dtor) (LIBSSH2_SESSION * session, int compress, void **abstract);
 };
 
+// TODO FIXME hack debug printing
+#include <stdarg.h>
+#include <OSUtils.h>
+void
+_libssh2_debug(LIBSSH2_SESSION * session, int context, const char *format, ...)
+{
+    va_list vargs;
+
+    printf("[libssh2] [%lu] [%d]", TickCount(), context);
+
+    va_start(vargs, format);
+    vprintf(format, vargs);
+    va_end(vargs);
+
+    printf("\n");
+}
+
 #ifdef LIBSSH2DEBUG
 void _libssh2_debug(LIBSSH2_SESSION * session, int context, const char *format,
                     ...);
@@ -967,16 +984,17 @@ void _libssh2_debug(LIBSSH2_SESSION * session, int context, const char *format,
 #if (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) ||     \
     defined(__GNUC__)
 /* C99 supported and also by older GCC */
-#define _libssh2_debug(x,y,z,...) do {} while (0)
+//#define _libssh2_debug(x,y,z,...) do {} while (0)
 #else
 /* no gcc and not C99, do static and hopefully inline */
+/*
 static inline void
 _libssh2_debug(LIBSSH2_SESSION * session, int context, const char *format, ...)
 {
     (void)session;
     (void)context;
     (void)format;
-}
+}*/
 #endif
 #endif
 
