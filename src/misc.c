@@ -136,7 +136,15 @@ _libssh2_recv(libssh2_socket_t sock, void *buffer, size_t length,
     int ret = -1;
     OTFlags unused_flags;
 
-    ret = OTRcv(sock, buffer, length, &unused_flags);
+    // FIXME TODO horrible hack to get around blocking issues
+
+    // when blocking, OTRcv tries to fill the entire buffer!!!
+    // does not return until it does or gets an error (timeout etc.)
+    //printf("called OTRcv %lu\n", TickCount());
+    ret = OTRcv(sock, buffer, 1, &unused_flags);
+    //printf("got OTRcv %lu\n", TickCount());
+
+    //if (unused_flags == T_TIMEDOUT) printf("timed out recv\n");
 
     return (ssize_t) ret;
 }

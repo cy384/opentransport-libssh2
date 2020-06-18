@@ -968,7 +968,7 @@ _libssh2_debug(LIBSSH2_SESSION * session, int context, const char *format, ...)
 {
     va_list vargs;
 
-    printf("[libssh2] [%lu] [%d]", TickCount(), context);
+    printf("[libssh2] [%lu] [%d] ", TickCount(), context);
 
     va_start(vargs, format);
     vprintf(format, vargs);

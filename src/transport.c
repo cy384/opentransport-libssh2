@@ -383,9 +383,9 @@ int _libssh2_transport_read(LIBSSH2_SESSION * session)
                                PACKETBUFSIZE - remainbuf, -nread);
                 return LIBSSH2_ERROR_SOCKET_RECV;
             }
-            _libssh2_debug(session, LIBSSH2_TRACE_SOCKET,
+            /*_libssh2_debug(session, LIBSSH2_TRACE_SOCKET,
                            "Recved %d/%d bytes to %p+%d", nread,
-                           PACKETBUFSIZE - remainbuf, p->buf, remainbuf);
+                           PACKETBUFSIZE - remainbuf, p->buf, remainbuf);*/
 
             debugdump(session, "libssh2_transport_read() raw",
                       &p->buf[remainbuf], nread);
