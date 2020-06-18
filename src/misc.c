@@ -133,20 +133,32 @@ ssize_t
 _libssh2_recv(libssh2_socket_t sock, void *buffer, size_t length,
               int flags, void **abstract)
 {
-    int ret = -1;
-    OTFlags unused_flags;
+    int error = 0;
+    int bytes_got = 0;
+    int ret = 0;
+    OTFlags ot_flags = T_MORE;
 
     // FIXME TODO horrible hack to get around blocking issues
 
     // when blocking, OTRcv tries to fill the entire buffer!!!
     // does not return until it does or gets an error (timeout etc.)
     //printf("called OTRcv %lu\n", TickCount());
-    ret = OTRcv(sock, buffer, 1, &unused_flags);
     //printf("got OTRcv %lu\n", TickCount());
 
-    //if (unused_flags == T_TIMEDOUT) printf("timed out recv\n");
+    while (ot_flags == T_MORE)
+    {
+        ret = OTRcv(sock, buffer, 1, &ot_flags);
 
-    return (ssize_t) ret;
+        if (ret < 0) return ret;
+
+        bytes_got += ret;
+        ot_flags = 0;
+    }
+
+    // TODO FIXME handle cases
+    if (ot_flags != 0) return -1;
+
+    return (ssize_t) bytes_got;
 }
 
 /* _libssh2_send
