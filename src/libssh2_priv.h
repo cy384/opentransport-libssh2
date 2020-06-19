@@ -961,6 +961,8 @@ struct _LIBSSH2_COMP_METHOD
 };
 
 // TODO FIXME hack debug printing
+// un-comment this to enable cheap debug printing
+/*
 #include <stdarg.h>
 #include <OSUtils.h>
 void
@@ -976,6 +978,7 @@ _libssh2_debug(LIBSSH2_SESSION * session, int context, const char *format, ...)
 
     printf("\n");
 }
+*/
 
 #ifdef LIBSSH2DEBUG
 void _libssh2_debug(LIBSSH2_SESSION * session, int context, const char *format,
@@ -984,17 +987,17 @@ void _libssh2_debug(LIBSSH2_SESSION * session, int context, const char *format,
 #if (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) ||     \
     defined(__GNUC__)
 /* C99 supported and also by older GCC */
-//#define _libssh2_debug(x,y,z,...) do {} while (0)
+#define _libssh2_debug(x,y,z,...) do {} while (0)
 #else
 /* no gcc and not C99, do static and hopefully inline */
-/*
+
 static inline void
 _libssh2_debug(LIBSSH2_SESSION * session, int context, const char *format, ...)
 {
     (void)session;
     (void)context;
     (void)format;
-}*/
+}
 #endif
 #endif
 

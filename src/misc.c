@@ -173,6 +173,20 @@ _libssh2_send(libssh2_socket_t sock, const void *buffer, size_t length,
 
     ret = OTSnd(sock, (void*) buffer, length, 0);
 
+    // TODO FIXME handle cases better, i.e. translate error cases
+    if (ret == kOTLookErr)
+    {
+        OTResult lookresult = OTLook(sock);
+        printf("kOTLookErr, reason: %ld\n", lookresult);
+
+        switch (lookresult)
+        {
+            default:
+               printf("what?\n");
+               break;
+        }
+    }
+
     return (ssize_t) ret;
 }
 
