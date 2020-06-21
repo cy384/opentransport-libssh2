@@ -145,9 +145,10 @@ _libssh2_recv(libssh2_socket_t sock, void *buffer, size_t length,
     //printf("called OTRcv %lu\n", TickCount());
     //printf("got OTRcv %lu\n", TickCount());
 
-    while (ot_flags == T_MORE)
+    while (ot_flags == T_MORE && length > 0)
     {
         ret = OTRcv(sock, buffer, 1, &ot_flags);
+        length--;
 
         if (ret < 0) return ret;
 
