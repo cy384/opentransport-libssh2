@@ -145,11 +145,13 @@ _libssh2_recv(libssh2_socket_t sock, void *buffer, size_t length,
     //printf("called OTRcv %lu\n", TickCount());
     //printf("got OTRcv %lu\n", TickCount());
 
+    // FIXME TODO problem: I think this only gets all bytes in current packet?
     while (ot_flags == T_MORE && length > 0)
     {
         ret = OTRcv(sock, buffer, 1, &ot_flags);
         length--;
 
+        if (ret == kOTNoDataErr) return -EAGAIN;
         if (ret < 0) return ret;
 
         bytes_got += ret;
