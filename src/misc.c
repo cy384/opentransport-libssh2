@@ -125,6 +125,7 @@ static int wsa2errno(void)
 }
 #endif
 
+#include <Threads.h>
 /* _libssh2_recv
  *
  * Replacement for the standard recv, return -errno on failure.
@@ -133,36 +134,46 @@ ssize_t
 _libssh2_recv(libssh2_socket_t sock, void *buffer, size_t length,
               int flags, void **abstract)
 {
-    int error = 0;
-    int bytes_got = 0;
-    int ret = 0;
-    OTFlags ot_flags = T_MORE;
+	OTResult ret = kOTNoDataErr;
+	OTFlags ot_flags = 0;
 
-    // FIXME TODO horrible hack to get around blocking issues
+	if (length == 0) return 0;
 
-    // when blocking, OTRcv tries to fill the entire buffer!!!
-    // does not return until it does or gets an error (timeout etc.)
-    //printf("called OTRcv %lu\n", TickCount());
-    //printf("got OTRcv %lu\n", TickCount());
+	// in non-blocking mode, returns instantly always
+	ret = OTRcv(sock, buffer, length, &ot_flags);
 
-    // FIXME TODO problem: I think this only gets all bytes in current packet?
-    while (ot_flags == T_MORE && length > 0)
-    {
-        ret = OTRcv(sock, buffer, 1, &ot_flags);
-        length--;
+	// if we got bytes, return them
+	if (ret >= 0) return ret;
 
-        if (ret == kOTNoDataErr) return -EAGAIN;
-        if (ret < 0) return ret;
+	// if no data, let other threads run, then tell caller to call again
+	if (ret == kOTNoDataErr)
+	{
+		YieldToAnyThread();
+		return -EAGAIN;
+	}
 
-        bytes_got += ret;
-        ot_flags = 0;
-    }
+	// if we got anything other than data or nothing, return an error
+	if (ret != kOTNoDataErr) return -1;
 
-    // TODO FIXME handle cases
-    if (ot_flags != 0) return -1;
-
-    return (ssize_t) bytes_got;
+	return -1;
 }
+
+/*
+	// TODO handle these properly
+	switch (OTGetEndpointState(sock))
+	{
+		case T_UNINIT:
+		case T_UNBND:
+		case T_OUTREL:
+		case T_INREL:
+			return -1;
+		case T_IDLE:
+		case T_OUTCON:
+		case T_INCON:
+		case T_DATAXFER:
+			break;
+	}
+*/
 
 /* _libssh2_send
  *
@@ -180,12 +191,12 @@ _libssh2_send(libssh2_socket_t sock, const void *buffer, size_t length,
     if (ret == kOTLookErr)
     {
         OTResult lookresult = OTLook(sock);
-        printf("kOTLookErr, reason: %ld\n", lookresult);
+        //printf("kOTLookErr, reason: %ld\n", lookresult);
 
         switch (lookresult)
         {
             default:
-               printf("what?\n");
+               //printf("what?\n");
                break;
         }
     }
