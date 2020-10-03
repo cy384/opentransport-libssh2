@@ -126,6 +126,8 @@ static int wsa2errno(void)
 #endif
 
 #include <Threads.h>
+
+extern enum { WAIT, READ, EXIT } read_thread_command; // this is a hack, sorry
 /* _libssh2_recv
  *
  * Replacement for the standard recv, return -errno on failure.
@@ -146,7 +148,7 @@ _libssh2_recv(libssh2_socket_t sock, void *buffer, size_t length,
 	if (ret >= 0) return ret;
 
 	// if no data, let other threads run, then tell caller to call again
-	if (ret == kOTNoDataErr)
+	if (ret == kOTNoDataErr && read_thread_command != EXIT)
 	{
 		YieldToAnyThread();
 		return -EAGAIN;
@@ -197,6 +199,7 @@ _libssh2_send(libssh2_socket_t sock, const void *buffer, size_t length,
         {
             default:
                //printf("what?\n");
+               ret = -1;
                break;
         }
     }
