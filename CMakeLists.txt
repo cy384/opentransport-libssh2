@@ -49,6 +49,17 @@ else()
   set (CMAKE_C_STANDARD 90)
 endif()
 
+if(CMAKE_SYSTEM_NAME MATCHES Retro68)
+add_compile_options(-mcpu=68020)
+add_compile_options(-O3)
+add_compile_options(-ffunction-sections)
+endif()
+
+if(CMAKE_SYSTEM_NAME MATCHES RetroPPC)
+add_compile_options(-O3)
+add_compile_options(-ffunction-sections)
+endif()
+
 option(BUILD_SHARED_LIBS "Build Shared Libraries" OFF)
 
 # Parse version
