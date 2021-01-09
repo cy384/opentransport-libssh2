@@ -75,6 +75,7 @@ env:
    - ADDRESS_SIZE=32 CRYPTO_BACKEND=mbedTLS BUILD_SHARED_LIBS=ON ENABLE_ZLIB_COMPRESSION=OFF B=cmake
    - ADDRESS_SIZE=32 CRYPTO_BACKEND=mbedTLS BUILD_SHARED_LIBS=OFF ENABLE_ZLIB_COMPRESSION=ON B=cmake
    - ADDRESS_SIZE=32 CRYPTO_BACKEND=mbedTLS BUILD_SHARED_LIBS=ON ENABLE_ZLIB_COMPRESSION=ON B=cmake
+   - B=fuzzer
 
 before_install:
   - if [ $ADDRESS_SIZE = '32' ]; then sudo dpkg --add-architecture i386; fi
@@ -86,7 +87,7 @@ before_install:
   - if [ $ADDRESS_SIZE = '64' ]; then sudo apt-get install -y libgcrypt11-dev; fi
   - if [ $ADDRESS_SIZE = '32' ]; then export TOOLCHAIN_OPTION="-DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-Linux-32.cmake"; fi
   - if [ $CRYPTO_BACKEND = 'mbedTLS' ]; then
-      MBEDTLSVER=mbedtls-2.4.0;
+      MBEDTLSVER=mbedtls-2.7.0;
       curl -L https://github.com/ARMmbed/mbedtls/archive/$MBEDTLSVER.tar.gz | tar -xzf -;
       cd mbedtls-$MBEDTLSVER;
       cmake $TOOLCHAIN_OPTION -DUSE_SHARED_MBEDTLS_LIBRARY=ON -DCMAKE_INSTALL_PREFIX:PATH=../usr .;
@@ -101,11 +102,13 @@ install:
 script:
   - |
       if [ "$B" = "style" ]; then
-        perl src/checksrc.pl -i4 -m79 -ASIZEOFNOPAREN -ASNPRINTF -ACOPYRIGHT -AFOPENMODE -Wsrc/libssh2_config.h src/*.[ch] include/*.h example/*.c
+        ./buildconf
+        ./configure
+        make checksrc
       fi
   - |
       if [ "$B" = "configure" ]; then
-        ./buildconf
+        autoreconf -fi
         ./configure --enable-debug --enable-werror
         make
         make check
@@ -115,6 +118,10 @@ script:
         mkdir bin
         cd bin
         cmake $TOOLCHAIN_OPTION -DCRYPTO_BACKEND=$CRYPTO_BACKEND -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS -DENABLE_ZLIB_COMPRESSION=$ENABLE_ZLIB_COMPRESSION .. && cmake --build . && CTEST_OUTPUT_ON_FAILURE=1 cmake --build . --target test && cmake --build . --target package
+      fi
+  - |
+      if [ "$B" = "fuzzer" ]; then
+        ./tests/ossfuzz/travisoss.sh
       fi
 
 # whitelist branches to avoid testing feature branches twice (as branch and as pull request)

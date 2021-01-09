@@ -62,10 +62,12 @@
 static int run_command_varg(char **output, const char *command, va_list args)
 {
     FILE *pipe;
+    char redirect_stderr[] = "%s 2>&1";
     char command_buf[BUFSIZ];
     char buf[BUFSIZ];
     char *p;
     int ret;
+
     if(output) {
         *output = NULL;
     }
@@ -78,18 +80,22 @@ static int run_command_varg(char **output, const char *command, va_list args)
     }
 
     /* Rewrite the command to redirect stderr to stdout to we can output it */
-    if(strlen(command_buf) + 6 >= sizeof(command_buf)) {
+    if(strlen(command_buf) + strlen(redirect_stderr) >= sizeof(buf)) {
         fprintf(stderr, "Unable to rewrite command (%s)\n", command);
         return -1;
     }
 
-    strncat(command_buf, " 2>&1", 6);
+    ret = snprintf(buf, sizeof(buf), redirect_stderr, command_buf);
+    if(ret < 0 || ret >= BUFSIZ) {
+        fprintf(stderr, "Unable to rewrite command (%s)\n", command);
+        return -1;
+    }
 
     fprintf(stdout, "Command: %s\n", command);
 #ifdef WIN32
-    pipe = _popen(command_buf, "r");
+    pipe = _popen(buf, "r");
 #else
-    pipe = popen(command_buf, "r");
+    pipe = popen(buf, "r");
 #endif
     if(!pipe) {
         fprintf(stderr, "Unable to execute command '%s'\n", command);
@@ -136,14 +142,14 @@ static int run_command(char **output, const char *command, ...)
 
 static int build_openssh_server_docker_image()
 {
-    return run_command(NULL, "docker build -t libssh2/openssh_server openssh_server");
+    return run_command(NULL, "docker build -t libssh2/openssh_server "
+                             "openssh_server");
 }
 
 static int start_openssh_server(char **container_id_out)
 {
     return run_command(container_id_out,
-                       "docker run --detach -P libssh2/openssh_server"
-                       );
+                       "docker run --detach -P libssh2/openssh_server");
 }
 
 static int stop_openssh_server(char *container_id)
@@ -167,9 +173,12 @@ static int ip_address_from_container(char *container_id, char **ip_address_out)
         int attempt_no = 0;
         int wait_time = 500;
         for(;;) {
-            return run_command(ip_address_out, "docker-machine ip %s", active_docker_machine);
-
-            if(attempt_no > 5) {
+            int ret = run_command(ip_address_out, "docker-machine ip %s",
+                                  active_docker_machine);
+            if(ret == 0) {
+                return 0;
+            }
+            else if(attempt_no > 5) {
                 fprintf(
                     stderr,
                     "Unable to get IP from docker-machine after %d attempts\n",
@@ -178,10 +187,7 @@ static int ip_address_from_container(char *container_id, char **ip_address_out)
             }
             else {
 #ifdef WIN32
-#pragma warning(push)
-#pragma warning(disable : 4996)
-                _sleep(wait_time);
-#pragma warning(pop)
+                Sleep(wait_time);
 #else
                 sleep(wait_time);
 #endif
@@ -218,15 +224,25 @@ static int open_socket_to_container(char *container_id)
 
     int ret = ip_address_from_container(container_id, &ip_address);
     if(ret != 0) {
-        fprintf(stderr, "Failed to get IP address for container %s\n", container_id);
+        fprintf(stderr, "Failed to get IP address for container %s\n",
+                container_id);
         ret = -1;
         goto cleanup;
     }
 
     ret = port_from_container(container_id, &port_string);
     if(ret != 0) {
-        fprintf(stderr, "Failed to get port for container %s\n", container_id);
+        fprintf(stderr, "Failed to get port for container %s\n",
+                container_id);
         ret = -1;
+    }
+
+    /* 0.0.0.0 is returned by Docker for Windows, because the container
+       is reachable from anywhere. But we cannot connect to 0.0.0.0,
+       instead we assume localhost and try to connect to 127.0.0.1. */
+    if(ip_address && strcmp(ip_address, "0.0.0.0") == 0) {
+        free(ip_address);
+        ip_address = strdup("127.0.0.1");
     }
 
     hostaddr = inet_addr(ip_address);
@@ -249,7 +265,8 @@ static int open_socket_to_container(char *container_id)
 
     if(connect(sock, (struct sockaddr *)(&sin),
                sizeof(struct sockaddr_in)) != 0) {
-        fprintf(stderr, "Failed to connect to %s:%s\n", ip_address, port_string);
+        fprintf(stderr, "Failed to connect to %s:%s\n",
+                ip_address, port_string);
         ret = -1;
         goto cleanup;
     }
