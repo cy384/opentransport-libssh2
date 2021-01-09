@@ -1,16 +1,6 @@
 = open transport libssh2 port
 
-This is a project to port libssh2 to the Retro68 toolchain for m68k and PPC Macs running an Open Transport networking stack.
-
-My goal is to write a new SSH client (named ssheven) for system 7/8/9.
-
-TODO:
-
-* [*] basic build stuff
-* [*] get all required mbedtls functionality working (filesystem stuff for key loading etc.?)
-* [*] replace/implement socket ops
-
-It currently works, but has only been tested in blocking mode, and the error handling needs improvement.
+This is a port of just enough of libssh to run on Mac OS 7/8/9, for use by [ssheven](https://github.com/cy384/ssheven).
 
 == notes
 first build and install my opentransport-mbedtls library port.

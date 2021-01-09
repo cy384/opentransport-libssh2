@@ -147,21 +147,13 @@ typedef unsigned long long libssh2_uint64_t;
 typedef long long libssh2_int64_t;
 #endif
 
-// TODO FIXME use proper ifdefs here
-/*
 #ifdef WIN32
 typedef SOCKET libssh2_socket_t;
 #define LIBSSH2_INVALID_SOCKET INVALID_SOCKET
-#else // !WIN32 
+#else /* !WIN32 */
 typedef int libssh2_socket_t;
 #define LIBSSH2_INVALID_SOCKET -1
-#endif // WIN32 
-*/
-
-#include <OpenTransport.h>
-#include <OpenTptInternet.h>
-typedef EndpointRef libssh2_socket_t;
-#define LIBSSH2_INVALID_SOCKET kOTInvalidEndpointRef
+#endif /* WIN32 */
 
 /*
  * Determine whether there is small or large file support on windows.

@@ -125,9 +125,6 @@ static int wsa2errno(void)
 }
 #endif
 
-#include <Threads.h>
-
-extern enum { WAIT, READ, EXIT } read_thread_command; // this is a hack, sorry
 /* _libssh2_recv
  *
  * Replacement for the standard recv, return -errno on failure.
@@ -136,46 +133,30 @@ ssize_t
 _libssh2_recv(libssh2_socket_t sock, void *buffer, size_t length,
               int flags, void **abstract)
 {
-	OTResult ret = kOTNoDataErr;
-	OTFlags ot_flags = 0;
+    ssize_t rc;
 
-	if (length == 0) return 0;
+    (void) abstract;
 
-	// in non-blocking mode, returns instantly always
-	ret = OTRcv(sock, buffer, length, &ot_flags);
-
-	// if we got bytes, return them
-	if (ret >= 0) return ret;
-
-	// if no data, let other threads run, then tell caller to call again
-	if (ret == kOTNoDataErr && read_thread_command != EXIT)
-	{
-		YieldToAnyThread();
-		return -EAGAIN;
-	}
-
-	// if we got anything other than data or nothing, return an error
-	if (ret != kOTNoDataErr) return -1;
-
-	return -1;
+    rc = -1;
+#ifdef WIN32
+    if(rc < 0)
+        return -wsa2errno();
+#else
+    if(rc < 0) {
+        /* Sometimes the first recv() function call sets errno to ENOENT on
+           Solaris and HP-UX */
+        if(errno == ENOENT)
+            return -EAGAIN;
+#ifdef EWOULDBLOCK /* For VMS and other special unixes */
+        else if(errno == EWOULDBLOCK)
+          return -EAGAIN;
+#endif
+        else
+            return -errno;
+    }
+#endif
+    return rc;
 }
-
-/*
-	// TODO handle these properly
-	switch (OTGetEndpointState(sock))
-	{
-		case T_UNINIT:
-		case T_UNBND:
-		case T_OUTREL:
-		case T_INREL:
-			return -1;
-		case T_IDLE:
-		case T_OUTCON:
-		case T_INCON:
-		case T_DATAXFER:
-			break;
-	}
-*/
 
 /* _libssh2_send
  *
@@ -185,26 +166,24 @@ ssize_t
 _libssh2_send(libssh2_socket_t sock, const void *buffer, size_t length,
               int flags, void **abstract)
 {
-    int ret = -1;
+    ssize_t rc;
 
-    ret = OTSnd(sock, (void*) buffer, length, 0);
+    (void) abstract;
 
-    // TODO FIXME handle cases better, i.e. translate error cases
-    if (ret == kOTLookErr)
-    {
-        OTResult lookresult = OTLook(sock);
-        //printf("kOTLookErr, reason: %ld\n", lookresult);
-
-        switch (lookresult)
-        {
-            default:
-               //printf("what?\n");
-               ret = -1;
-               break;
-        }
+    rc = -1;
+#ifdef WIN32
+    if(rc < 0)
+        return -wsa2errno();
+#else
+    if(rc < 0) {
+#ifdef EWOULDBLOCK /* For VMS and other special unixes */
+      if(errno == EWOULDBLOCK)
+        return -EAGAIN;
+#endif
+      return -errno;
     }
-
-    return (ssize_t) ret;
+#endif
+    return rc;
 }
 
 /* libssh2_ntohu32
