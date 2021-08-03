@@ -56,6 +56,7 @@ add_compile_options(-ffunction-sections)
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES RetroPPC)
+add_compile_options(-mcpu=601)
 add_compile_options(-O3)
 add_compile_options(-ffunction-sections)
 endif()
