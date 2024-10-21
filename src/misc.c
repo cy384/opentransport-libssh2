@@ -155,11 +155,11 @@ ssize_t
 _libssh2_recv(libssh2_socket_t sock, void *buffer, size_t length,
               int flags, void **abstract)
 {
-    ssize_t rc;
+    ssize_t rc = 0;
 
     (void)abstract;
 
-    rc = recv(sock, buffer, length, flags);
+    //rc = recv(sock, buffer, length, flags);
     if(rc < 0) {
         int err;
 #ifdef _WIN32
