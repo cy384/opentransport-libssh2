@@ -178,7 +178,7 @@ struct iovec {
     void *iov_base;
 };
 
-#endif
+//#endif
 
 #ifdef __OS400__
 /* Force parameter type. */

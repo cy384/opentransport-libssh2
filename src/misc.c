@@ -194,11 +194,11 @@ ssize_t
 _libssh2_send(libssh2_socket_t sock, const void *buffer, size_t length,
               int flags, void **abstract)
 {
-    ssize_t rc;
+    ssize_t rc = 0;
 
     (void)abstract;
 
-    rc = send(sock, buffer, length, flags);
+    //rc = send(sock, buffer, length, flags);
     if(rc < 0) {
         int err;
 #ifdef _WIN32
