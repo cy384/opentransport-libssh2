@@ -50,6 +50,9 @@ include(FeatureSummary)
 include(CheckFunctionExistsMayNeedLibrary)
 include(CheckNonblockingSocketSupport)
 
+
+set(BUILD_FOR_SSHEVEN ${PROJECT_NAME})
+
 project(libssh2 C)
 
 function(libssh2_dumpvars)  # Dump all defined variables with their values
@@ -402,18 +405,34 @@ endif()
 
 if(CRYPTO_BACKEND STREQUAL "mbedTLS" OR NOT CRYPTO_BACKEND)
 
-  find_package(MbedTLS ${_specific_crypto_requirement})
-
-  if(MBEDTLS_FOUND)
+  if(BUILD_FOR_SSHEVEN)
     set(CRYPTO_BACKEND "mbedTLS")
     set(CRYPTO_BACKEND_DEFINE "LIBSSH2_MBEDTLS")
-    set(CRYPTO_BACKEND_INCLUDE_DIR ${MBEDTLS_INCLUDE_DIRS})
-    list(APPEND LIBSSH2_LIBS ${MBEDTLS_LIBRARIES})
+
+    file(REAL_PATH ../opentransport-mbedtls/include/ ACTUAL_MBEDTLS_INC_DIR BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+
+    set(CRYPTO_BACKEND_INCLUDE_DIR ${ACTUAL_MBEDTLS_INC_DIR})
+    list(APPEND LIBSSH2_LIBS "")
     list(APPEND LIBSSH2_LIBDIRS ${MBEDTLS_LIBRARY_DIRS})
     list(APPEND LIBSSH2_PC_REQUIRES_PRIVATE "mbedcrypto")
     link_directories(${MBEDTLS_LIBRARY_DIRS})
     if(MBEDTLS_CFLAGS)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MBEDTLS_CFLAGS}")
+    endif()
+  else()
+    find_package(MbedTLS ${_specific_crypto_requirement})
+
+    if(MBEDTLS_FOUND)
+      set(CRYPTO_BACKEND "mbedTLS")
+      set(CRYPTO_BACKEND_DEFINE "LIBSSH2_MBEDTLS")
+      set(CRYPTO_BACKEND_INCLUDE_DIR ${MBEDTLS_INCLUDE_DIRS})
+      list(APPEND LIBSSH2_LIBS ${MBEDTLS_LIBRARIES})
+      list(APPEND LIBSSH2_LIBDIRS ${MBEDTLS_LIBRARY_DIRS})
+      list(APPEND LIBSSH2_PC_REQUIRES_PRIVATE "mbedcrypto")
+      link_directories(${MBEDTLS_LIBRARY_DIRS})
+        if(MBEDTLS_CFLAGS)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MBEDTLS_CFLAGS}")
+      endif()
     endif()
   endif()
 endif()
